@@ -4222,6 +4222,46 @@ async def users_count_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"👥 عدد المستخدمين: {count:,}")
 
 
+async def delete_user_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/deleteuser [user_id] — حذف بيانات مستخدم (للمالك فقط)"""
+    user = update.effective_user
+    if OWNER_ID != 0 and user.id != OWNER_ID:
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "🗑️ حذف مستخدم\n\n"
+            "الاستخدام:\n"
+            "/deleteuser [رقم_المستخدم]\n\n"
+            "مثال:\n"
+            "/deleteuser 123456789"
+        )
+        return
+
+    try:
+        target_id = str(context.args[0])
+    except (ValueError, IndexError):
+        await update.message.reply_text("❌ الرقم غير صحيح.")
+        return
+
+    deleted_user = DB["users"].pop(target_id, None)
+    deleted_bank = DB.get("bank_accounts", {}).pop(target_id, None)
+
+    if deleted_user is None and deleted_bank is None:
+        await update.message.reply_text(f"❌ المستخدم `{target_id}` غير موجود في قاعدة البيانات.")
+        return
+
+    save_db(DB)
+    name = deleted_user.get("first_name") or deleted_user.get("username") or "مجهول" if deleted_user else "—"
+    await update.message.reply_text(
+        f"✅ تم حذف المستخدم بنجاح!\n\n"
+        f"🆔 ID: `{target_id}`\n"
+        f"👤 الاسم: {name}\n"
+        f"🗄️ تم حذف البيانات من users {'✅' if deleted_user else '—'} و bank_accounts {'✅' if deleted_bank else '—'}",
+        parse_mode="Markdown"
+    )
+
+
 async def admin_stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """/adminstats [الكود] — إحصائيات البوت الكاملة"""
     user = update.effective_user
@@ -4362,6 +4402,7 @@ def main():
     app.add_handler(CommandHandler("secretcode",   secretcode_cmd))
     app.add_handler(CommandHandler("users",        users_count_cmd))
     app.add_handler(CommandHandler("adminstats",   admin_stats_cmd))
+    app.add_handler(CommandHandler("deleteuser",   delete_user_cmd))
 
     # ━━ معالجات عامة ━━
     app.add_handler(CallbackQueryHandler(button_handler))
