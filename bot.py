@@ -4308,7 +4308,7 @@ async def admin_stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             uid    = u.get("id", 0)
             name   = _html.escape(u.get("first_name") or u.get("username") or "مجهول")
             played = u.get("total_played", 0)
-            users_text += f"  {i:>2}. <a href=\"tg://user?id={uid}\">{name}</a> — {played:,} 🎮\n"
+            users_text += f"  {i:>2}. <a href=\"tg://user?id={uid}\">{name}</a> — {played:,} 🎮\n🆔 <code>{uid}</code>\n"
 
         total_pages = math.ceil(len(top50) / 10) or 1
         text = (
