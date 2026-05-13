@@ -3407,7 +3407,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             uid    = u.get("id", 0)
             name   = _html.escape(u.get("first_name") or u.get("username") or "مجهول")
             played = u.get("total_played", 0)
-            users_text += f"  {i:>2}. <a href=\"tg://user?id={uid}\">{name}</a> — {played:,} 🎮\n"
+            users_text += f"  {i:>2}. <a href=\"tg://user?id={uid}\">{name}</a> — {played:,} 🎮\n🆔 <code>{uid}</code>\n"
 
         # إعادة بناء الإحصائيات العامة
         all_users        = list(DB["users"].values())
@@ -4239,12 +4239,19 @@ async def delete_user_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        target_id = str(context.args[0])
+        target_id = str(context.args[0]).strip()
+        target_id_int = int(target_id)
     except (ValueError, IndexError):
         await update.message.reply_text("❌ الرقم غير صحيح.")
         return
 
     deleted_user = DB["users"].pop(target_id, None)
+    if deleted_user is None:
+        found_key = next((k for k, v in DB["users"].items() if v.get("id") == target_id_int), None)
+        if found_key:
+            deleted_user = DB["users"].pop(found_key)
+            target_id = found_key
+
     deleted_bank = DB.get("bank_accounts", {}).pop(target_id, None)
 
     if deleted_user is None and deleted_bank is None:
